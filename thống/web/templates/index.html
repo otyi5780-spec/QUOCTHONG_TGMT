@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>AttendAI — Điểm Danh Tự Động</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/static/style.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">🎓</div>
+    <div>
+      <b class="logo-title">AttendAI</b>
+      <small id="className">CV-CT4-K17</small>
+    </div>
+  </div>
+
+    <nav>
+      <a class="nav active" data-tab="dashboard">
+        <span class="nav-icon">📊</span> Dashboard
+      </a>
+      <a class="nav" data-tab="camera">
+        <span class="nav-icon">📷</span> Điểm Danh Camera
+      </a>
+      <a class="nav" data-tab="attendance">
+        <span class="nav-icon">📋</span> Lịch Sử
+      </a>
+      <a class="nav" data-tab="students">
+        <span class="nav-icon">👥</span> Sinh Viên
+      </a>
+    </nav>
+
+  <div class="sidebar-footer">
+    <span id="dot" class="dot"></span>
+    <span id="connStatus">Đang kết nối…</span>
+  </div>
+</aside>
+
+<main>
+  <header>
+    <div>
+      <h1 id="pageTitle">Dashboard</h1>
+      <small id="pageSub">Tổng quan hệ thống</small>
+    </div>
+    <div class="hdr-right">
+      <span class="session-badge">
+        <span class="pulse"></span>
+        <span id="sessionId">--</span>
+      </span>
+      <span class="clock" id="clock">--:--:--</span>
+    </div>
+  </header>
+
+    <!-- ═══════════ DASHBOARD ═══════════ -->
+    <section id="tab-dashboard" class="tab active">
+      <div class="stat-grid">
+        <div class="stat-card accent-blue">
+          <div class="stat-icon">👥</div>
+          <div class="stat-body">
+            <div class="stat-val" id="cTotal">—</div>
+            <div class="stat-lbl">Tổng Sinh Viên</div>
+          </div>
+        </div>
+        <div class="stat-card accent-green">
+          <div class="stat-icon">✅</div>
+          <div class="stat-body">
+            <div class="stat-val" id="cToday">—</div>
+            <div class="stat-lbl">Điểm Danh Hôm Nay</div>
+          </div>
+        </div>
+        <div class="stat-card accent-cyan">
+          <div class="stat-icon">🎯</div>
+          <div class="stat-body">
+            <div class="stat-val" id="cConf">—</div>
+            <div class="stat-lbl">Độ Chính Xác TB</div>
+          </div>
+        </div>
+        <div class="stat-card accent-orange">
+          <div class="stat-icon">🧠</div>
+          <div class="stat-body">
+            <div class="stat-val" id="cFaces">—</div>
+            <div class="stat-lbl">Khuôn Mặt Đã Train</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="dashboard-charts">
+        <div class="card chart-card main-chart">
+          <div class="card-header">
+            <h2>📈 Xu hướng điểm danh (7 ngày qua)</h2>
+          </div>
+          <div class="chart-box">
+            <canvas id="historyChart"></canvas>
+          </div>
+        </div>
+        <div class="card chart-card side-chart">
+          <div class="card-header">
+            <h2>🍩 Phương thức</h2>
+          </div>
+          <div class="chart-box">
+            <canvas id="methodChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button class="btn btn-cyan" onclick="trainNow()">🔧 Train Lại</button>
+        <button class="btn btn-green" onclick="exportCSV()">⬇️ Export CSV</button>
+        <span class="hint">Dữ liệu được làm mới tự động</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>🕒 Hoạt động gần đây (Hôm nay)</h2>
+          <span class="badge" id="todayCnt">0</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>MSSV</th><th>Họ Tên</th><th>Buổi</th>
+                <th>Giờ Vào</th><th>Tin Cậy</th><th>Phương Thức</th>
+              </tr>
+            </thead>
+            <tbody id="bodyToday">
+              <tr><td colspan="6" class="empty">Đang tải...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  <!-- ═══════════ CAMERA ═══════════ -->
+  <section id="tab-camera" class="tab">
+    <div class="cam-layout">
+
+      <!-- Cột Trái: Video -->
+      <div class="cam-box">
+        <div class="cam-viewport" id="camViewport">
+          <!-- MJPEG stream nhúng thẳng từ Python cv2 -->
+          <img id="camImg" src="" alt="Camera Stream"
+               style="width:100%;height:100%;object-fit:cover;display:block"/>
+          <div class="cam-off-msg" id="camOffMsg">
+            <div class="cam-off-icon">📷</div>
+            <p>Nhấn <b>Bật Camera</b> để bắt đầu điểm danh</p>
+          </div>
+          <!-- HUD overlay -->
+          <div class="cam-hud" id="camHud" style="display:none">
+            <span id="hudStatus" class="hud-scanning">⏳ Đang khởi động...</span>
+            <span id="hudConfirmed">✅ 0 đã điểm danh</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cột Phải: Panel Controls & Logs -->
+      <div class="cam-panel">
+        
+        <!-- Controls Card -->
+        <div class="cam-card">
+          <div style="display:flex; gap:.5rem; margin-bottom:.8rem">
+            <button class="btn btn-blue" style="flex:1; justify-content:center" id="btnStartCam" onclick="startStream()">▶ Bật Camera</button>
+            <button class="btn btn-danger" style="flex:1; justify-content:center; display:none;" id="btnStopCam" onclick="stopStream()">■ Dừng</button>
+          </div>
+          <div class="fg" style="margin-bottom:.8rem">
+            <label>Buổi học</label>
+            <input id="camSession" placeholder="VD: 20260411_0800"/>
+          </div>
+          <div style="display:flex; gap:.5rem">
+            <button class="btn btn-green" style="flex:1; justify-content:center" onclick="exportCSV()">⬇️ Xuất CSV</button>
+            <button class="btn btn-cyan" style="flex:1; justify-content:center" onclick="trainNow()">🔧 Train Lại</button>
+          </div>
+        </div>
+
+        <!-- Log Card -->
+        <div class="cam-card" style="flex: 1; display:flex; flex-direction:column; overflow:hidden">
+          <div class="cam-panel-hdr">
+            <h2>✅ Đã Điểm Danh</h2>
+            <span class="badge" id="camRecordCnt">0</span>
+          </div>
+          <div class="cam-result-list" id="camResultList">
+            <div class="cam-empty">Chưa xác nhận được ai</div>
+          </div>
+        </div>
+
+        <!-- Scan Card -->
+        <div class="cam-card" style="display:flex; flex-direction:column; overflow:hidden">
+          <div class="cam-panel-hdr" style="border-top:none">
+            <h2>⏳ Đang Xác Nhận 5 Giây</h2>
+          </div>
+          <div class="cam-frame-list" id="camFrameList">
+            <div class="cam-empty">Chưa phát hiện khuôn mặt cần giữ 5 giây</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ LỊCH SỬ ═══════════ -->
+  <section id="tab-attendance" class="tab">
+    <div class="filter-bar">
+      <div class="fg">
+        <label>Lọc theo Ngày</label>
+        <input type="date" id="filterDate"/>
+      </div>
+      <div class="fg">
+        <label>Lọc theo Buổi</label>
+        <select id="filterSession">
+          <option value="">-- Tất cả buổi --</option>
+        </select>
+      </div>
+      <button class="btn btn-blue" onclick="loadAttendance()">🔍 Lọc</button>
+      <button class="btn btn-ghost" onclick="clearFilter()">✕ Xoá lọc</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Lịch Sử Điểm Danh</h2>
+        <span class="badge" id="attCnt">0</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>MSSV</th><th>Họ Tên</th><th>Ngày</th>
+              <th>Giờ Vào</th><th>Buổi</th><th>Tin Cậy</th><th>Phương Thức</th>
+            </tr>
+          </thead>
+          <tbody id="bodyAtt">
+            <tr><td colspan="7" class="empty">Đang tải…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+
+
+  <!-- ═══════════ SINH VIÊN ═══════════ -->
+  <section id="tab-students" class="tab">
+    <div class="card form-card">
+      <div class="card-header"><h2>➕ Thêm Sinh Viên</h2></div>
+      <form onsubmit="addStudent(event)" class="form-row" style="padding:1.2rem">
+        <div class="fg">
+          <label>MSSV *</label>
+          <input id="fid" placeholder="2151001" required/>
+        </div>
+        <div class="fg">
+          <label>Họ Tên *</label>
+          <input id="fn" placeholder="Nguyễn Văn A" required/>
+        </div>
+        <div class="fg">
+          <label>Lớp</label>
+          <input id="fc" placeholder="CV-CT4-K17"/>
+        </div>
+        <button type="submit" class="btn btn-blue">Thêm</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div style="flex:1; display:flex; align-items:center; gap:.8rem">
+          <h2>Danh Sách Sinh Viên</h2>
+          <span class="badge" id="svCnt">0</span>
+        </div>
+        <div class="card-search">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="svSearch" placeholder="Tìm theo tên hoặc MSSV..." oninput="filterStudents()"/>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>MSSV</th>
+              <th>Họ Tên</th>
+              <th>Lớp</th>
+              <th>Số Ảnh</th>
+              <th>Trạng Thái</th>
+              <th style="text-align:right">Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody id="bodyStudents">
+            <tr><td colspan="6" class="empty">Đang tải…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

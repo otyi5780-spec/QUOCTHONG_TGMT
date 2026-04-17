@@ -1,0 +1,10 @@
+opencv-python>=4.9.0
+deepface>=0.0.93
+tf-keras>=2.15.0
+flask>=3.0.0
+flask-cors>=4.0.0
+SQLAlchemy>=2.0.0
+python-dotenv>=1.0.0
+numpy>=1.24.0
+Pillow>=10.0.0
+pandas>=2.0.0
